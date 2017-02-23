@@ -12,6 +12,8 @@ from selenium.webdriver.common.by import By
 
 class GodvilleAuto:
     ACTION_COOL_TIME = 5 # seconds
+    EXTRA_WAIT_TIME = 60
+    DUAL_TIME_PER_TURN = 6
     DEFAULT_WAIT_TIME = 900 # 15 minutes
     MIN_ARENA_GP = 50
     MIN_ENCOURAGE_GP = 25
@@ -101,10 +103,10 @@ class GodvilleAuto:
                 items = wait_time_str.split("h")
                 hours = int(items[0])
                 mins = int(items[1].rstrip("m"))
-                self.wait_time = hours * 3600 + mins * 60 + 10
+                self.wait_time = hours * 3600 + mins * 60 + GodvilleAuto.EXTRA_WAIT_TIME
             else:
                 mins = int(wait_time_str.rstrip("m"))
-                self.wait_time = mins * 60 + 10
+                self.wait_time = mins * 60 + 10 + GodvilleAuto.EXTRA_WAIT_TIME
 
         except ElementNotVisibleException:
             print ("Arena Available Time Not Visible")
@@ -141,7 +143,7 @@ class GodvilleAuto:
                 except ElementNotVisibleException:
                     print ("Encourage Not Visible [Can't Encourage]")
 
-            time.sleep(GodvilleAuto.ACTION_COOL_TIME * 2 + 1)
+            time.sleep(GodvilleAuto.DUAL_TIME_PER_TURN)
 
     def __get_health_percent__(self):
         health_text = self.browser.find_element_by_xpath(
