@@ -13,7 +13,7 @@ from selenium.webdriver.common.by import By
 class GodvilleAuto:
     ACTION_COOL_TIME = 5 # seconds
     EXTRA_WAIT_TIME = 60
-    DUAL_TIME_PER_TURN = 6
+    DUAL_TIME_PER_TURN = 27
     DEFAULT_WAIT_TIME = 900 # 15 minutes
     MIN_ARENA_GP = 50
     MIN_ENCOURAGE_GP = 25
@@ -21,8 +21,9 @@ class GodvilleAuto:
 
     def __init__(self):
         self.browser = self.__init_browser__()
-        self.timeout = 10
+        self.timeout = 300
         self.wait_time = GodvilleAuto.DEFAULT_WAIT_TIME
+        self.recheck_flag = False
 
     @staticmethod
     def __init_browser__():
@@ -40,14 +41,19 @@ class GodvilleAuto:
 
         while True:
             self.wait_time = GodvilleAuto.DEFAULT_WAIT_TIME
+            self.recheck_flag = False
             print ("Checking Time: " + str(datetime.now()))
-            gp = self.__get_gp__()
 
-            if gp > GodvilleAuto.MIN_ARENA_GP:
-                print ("\tGod Power " + str(gp))
-                self.__send_to_arena__()
+            if self.__is_send_visible__():
+                gp = self.__get_gp__()
+                if gp > GodvilleAuto.MIN_ARENA_GP:
+                    print ("God Power " + str(gp))
+                    self.__send_to_arena__()
+                else:
+                    print ("Insufficient God Power")
+                    self.recheck_flag = True
             else:
-                print ("\tInsufficient God Power")
+                self.__set_actual_wait_time__()
 
             self.__show_wait_info__()
 
@@ -71,6 +77,11 @@ class GodvilleAuto:
         except TimeoutException:
             print "Timed out waiting for page to load"
 
+    def __is_send_visible__(self):
+        return self.browser.find_element_by_xpath(
+                '//div[@class="arena_link_wrap"]/a[text() = "Send to Arena"]'
+            ).is_displayed()
+
     def __send_to_arena__(self):
         try:
             time.sleep(GodvilleAuto.ACTION_COOL_TIME)
@@ -86,10 +97,11 @@ class GodvilleAuto:
                 self.__start_dual__()
             except NoAlertPresentException:
                 print ("Still waiting, check again")
+                self.recheck_flag = True
 
         except ElementNotVisibleException:
             print ("Send to Arena Element Not Visible")
-            self.__set_actual_wait_time__()
+            self.recheck_flag = True
 
     def __set_actual_wait_time__(self):
         try:
@@ -108,8 +120,9 @@ class GodvilleAuto:
                 mins = int(wait_time_str.rstrip("m"))
                 self.wait_time = mins * 60 + 10 + GodvilleAuto.EXTRA_WAIT_TIME
 
-        except ElementNotVisibleException:
-            print ("Arena Available Time Not Visible")
+        except NoSuchElementException:
+            print ("Check Again for Arena Available Time")
+            self.recheck_flag = True
 
     def __start_dual__(self):
         wait_arena_time = 900
@@ -122,10 +135,12 @@ class GodvilleAuto:
 
         except TimeoutException:
             print "Dual didn't start"
+            self.recheck_flag = True
 
     def __encourage__(self):
         print ("Dual Start!")
         while True:
+            time.sleep(GodvilleAuto.DUAL_TIME_PER_TURN)
             try:
                 self.browser.find_element_by_id("m_fight_log")
             except NoSuchElementException:
@@ -134,16 +149,15 @@ class GodvilleAuto:
 
             health_percent = self.__get_health_percent__()
             gp = self.__get_gp__()
+            print ("Health: " + str(health_percent) + "% | GP: " + str(gp))
 
             if health_percent < GodvilleAuto.MIN_HEALTH_PERCENT and gp > GodvilleAuto.MIN_ENCOURAGE_GP:
                 try:
                     self.browser.find_element_by_xpath(
-                        '//div[@class="cntrl1"]/a[text() = "Encourage"]'
+                        '//div[@id="cntrl1"]/a[text() = "Encourage"]'
                     ).click()
                 except ElementNotVisibleException:
                     print ("Encourage Not Visible [Can't Encourage]")
-
-            time.sleep(GodvilleAuto.DUAL_TIME_PER_TURN)
 
     def __get_health_percent__(self):
         health_text = self.browser.find_element_by_xpath(
@@ -151,13 +165,15 @@ class GodvilleAuto:
         return int(re.sub("[^0-9]", "", health_text))
 
     def __get_gp__(self):
-        gp_text = self.browser.find_element_by_xpath(
-            '//div[@id="control"]//div[@class="gp_val"]').text
+        gp_text = self.browser.find_element_by_class_name('gp_val').text
         return int(str(gp_text).rstrip('%'))
 
     def __show_wait_info__(self):
         avail_time = datetime.now() + timedelta(seconds=self.wait_time)
-        print ("Arena will be available at: " + str(avail_time))
+        if self.recheck_flag:
+            print ("Will check again at: " + str(avail_time) + "\n")
+        else:
+            print ("Arena will be available at: " + str(avail_time) + "\n")
         time.sleep(self.wait_time)
 
 auto_slmn = GodvilleAuto()
