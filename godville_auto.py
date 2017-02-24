@@ -16,7 +16,7 @@ class GodvilleAuto:
     DUAL_TIME_PER_TURN = 27
     DEFAULT_WAIT_TIME = 900 # 15 minutes
     MIN_ARENA_GP = 50
-    MIN_ENCOURAGE_GP = 25
+    MIN_ENCOURAGE_GP = 40
     MIN_HEALTH_PERCENT = 25
 
     def __init__(self):
@@ -51,7 +51,7 @@ class GodvilleAuto:
                     self.__send_to_arena__()
                 else:
                     print ("Insufficient God Power")
-                    self.recheck_flag = True
+                self.recheck_flag = True
             else:
                 self.__set_actual_wait_time__()
 
@@ -97,11 +97,9 @@ class GodvilleAuto:
                 self.__start_dual__()
             except NoAlertPresentException:
                 print ("Still waiting, check again")
-                self.recheck_flag = True
 
         except ElementNotVisibleException:
             print ("Send to Arena Element Not Visible")
-            self.recheck_flag = True
 
     def __set_actual_wait_time__(self):
         try:
@@ -135,7 +133,6 @@ class GodvilleAuto:
 
         except TimeoutException:
             print "Dual didn't start"
-            self.recheck_flag = True
 
     def __encourage__(self):
         print ("Dual Start!")
@@ -156,6 +153,7 @@ class GodvilleAuto:
                     self.browser.find_element_by_xpath(
                         '//div[@id="cntrl1"]/a[text() = "Encourage"]'
                     ).click()
+                    print ("Encouraged!")
                 except ElementNotVisibleException:
                     print ("Encourage Not Visible [Can't Encourage]")
 
