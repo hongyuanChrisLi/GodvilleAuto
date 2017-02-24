@@ -17,7 +17,7 @@ class GodvilleAuto:
     DEFAULT_WAIT_TIME = 900 # 15 minutes
     MIN_ARENA_GP = 50
     MIN_ENCOURAGE_GP = 40
-    MIN_HEALTH_PERCENT = 25
+    MIN_HEALTH_PERCENT = 30
 
     def __init__(self):
         self.browser = self.__init_browser__()
