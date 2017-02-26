@@ -25,14 +25,20 @@ class GodvilleAuto:
         self.wait_time = GodvilleAuto.DEFAULT_WAIT_TIME
         self.recheck_flag = False
 
+        self.rival_2nd_pre_percent = 100
+        self.rival_1st_pre_percent = 100
+
+
     @staticmethod
     def __init_browser__():
         fp = webdriver.FirefoxProfile('/home/sparkit/Data/FirefoxProfile')
         fp.set_preference('permissions.default.image', 2)
         fp.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', False)
         fp.set_preference('webdriver.load.strategy', 'unstable')
-        fp.set_preference('javascript.enabled', False)
+        # fp.set_preference('javascript.enabled', False)
         browser = webdriver.Firefox(firefox_profile=fp)
+        # browser = webdriver.PhantomJS()
+        browser.set_window_size(1120, 550)
         browser.implicitly_wait(10)
         return browser
 
@@ -69,6 +75,8 @@ class GodvilleAuto:
         password_input.clear()
         password_input.send_keys(godville_pass)
 
+        time.sleep(5)
+
         self.browser.find_element_by_xpath('//input[@name="commit"]').click()
 
         try:
@@ -76,11 +84,6 @@ class GodvilleAuto:
             WebDriverWait(self.browser, self.timeout).until(element_present)
         except TimeoutException:
             print "Timed out waiting for page to load"
-
-    def __is_send_visible__(self):
-        return self.browser.find_element_by_xpath(
-                '//div[@class="arena_link_wrap"]/a[text() = "Send to Arena"]'
-            ).is_displayed()
 
     def __send_to_arena__(self):
         try:
@@ -93,13 +96,65 @@ class GodvilleAuto:
                 time.sleep(GodvilleAuto.ACTION_COOL_TIME)
                 alert = self.browser.switch_to.alert
                 alert.accept()
-                print ("Sent to Arena")
+
                 self.__start_dual__()
+
             except NoAlertPresentException:
                 print ("Still waiting, check again")
 
         except ElementNotVisibleException:
             print ("Send to Arena Element Not Visible")
+
+    def __start_dual__(self):
+        print ("Sent to Arena")
+
+        wait_arena_time = 900
+        try:
+            print ("Waiting for Dual ... ")
+            element_present = EC.presence_of_element_located((By.ID, "m_fight_log"))
+            WebDriverWait(self.browser, wait_arena_time).until(element_present)
+
+            self.__monitor__()
+
+        except TimeoutException:
+            print "Dual didn't start"
+
+    def __monitor__(self):
+        print ("Dual Start!")
+
+        time.sleep(10)
+        while True:
+            try:
+                self.browser.find_element_by_id("m_fight_log")
+            except NoSuchElementException:
+                print ("Dual End. ")
+                break
+
+            if self.__get_turn_progress__() < 10 and (
+                        self.__is_my_defence_turn__() or
+                        self.__get_hero_health_percent__() < 15):
+                self.__encourage__()
+
+            # print ("Turn progress before waiting: " + str(self.__get_turn_progress__()) + "%")
+            while self.__get_turn_progress__() <= 98:
+                time.sleep(0.25)
+            # print ("Turn progress after waiting: " + str(self.__get_turn_progress__()) + "%")
+
+            time.sleep(1)
+
+    def __encourage__(self):
+        health_percent = self.__get_hero_health_percent__()
+        gp = self.__get_gp__()
+        print ("Health: " + str(health_percent) + "% | GP: " + str(gp))
+
+        if health_percent < GodvilleAuto.MIN_HEALTH_PERCENT and gp > GodvilleAuto.MIN_ENCOURAGE_GP:
+            try:
+                self.browser.find_element_by_xpath(
+                    '//div[@id="cntrl1"]/a[text() = "Encourage"]'
+                ).click()
+                print ("Encouraged!")
+            except ElementNotVisibleException:
+                print ("Encourage Not Visible [Can't Encourage]")
 
     def __set_actual_wait_time__(self):
         try:
@@ -122,44 +177,54 @@ class GodvilleAuto:
             print ("Check Again for Arena Available Time")
             self.recheck_flag = True
 
-    def __start_dual__(self):
-        wait_arena_time = 900
+    def __is_send_visible__(self):
+        return self.browser.find_element_by_xpath(
+                '//div[@class="arena_link_wrap"]/a[text() = "Send to Arena"]'
+            ).is_displayed()
+
+    def __is_my_defence_turn__(self):
+        is_my_defence_turn = False
+
+        self.rival_2nd_pre_percent = 100
+        self.rival_1st_pre_percent = 100
+
+        rival_health_percent = self.__get_rival_health_percent__()
+        rival_1st_diff = self.rival_1st_pre_percent - rival_health_percent
+        rival_2nd_diff = self.rival_2nd_pre_percent - self.rival_1st_pre_percent
+
+        print ("rival_1st_diff: " + str(rival_1st_diff))
+        print ("rival_2nd_diff: " + str(rival_2nd_diff))
+
+        if rival_1st_diff < 0:
+            # last turn was rival's defence turn
+            is_my_defence_turn = True
+        elif rival_2nd_diff < rival_1st_diff:
+            # last turn was rival's defence turn
+            is_my_defence_turn = True
+
+        self.rival_2nd_pre_percent = self.rival_1st_pre_percent
+        self.rival_1st_pre_percent = rival_health_percent
+
+        print ("is_my_defence_turn: " + str(is_my_defence_turn))
+
+        return is_my_defence_turn
+
+    def __get_turn_progress__(self):
         try:
-            print ("Waiting for Dual ... ")
-            element_present = EC.presence_of_element_located((By.ID, "m_fight_log"))
-            WebDriverWait(self.browser, wait_arena_time).until(element_present)
+            turn_progress_text = self.browser.find_element_by_xpath(
+                '//div[@id="turn_pbar"]/div').get_attribute('title')
+            return int(re.sub("[^0-9]", "", turn_progress_text))
+        except NoSuchElementException:
+            return 100
 
-            self.__encourage__()
-
-        except TimeoutException:
-            print "Dual didn't start"
-
-    def __encourage__(self):
-        print ("Dual Start!")
-        while True:
-            time.sleep(GodvilleAuto.DUAL_TIME_PER_TURN)
-            try:
-                self.browser.find_element_by_id("m_fight_log")
-            except NoSuchElementException:
-                print ("Dual End. ")
-                break
-
-            health_percent = self.__get_health_percent__()
-            gp = self.__get_gp__()
-            print ("Health: " + str(health_percent) + "% | GP: " + str(gp))
-
-            if health_percent < GodvilleAuto.MIN_HEALTH_PERCENT and gp > GodvilleAuto.MIN_ENCOURAGE_GP:
-                try:
-                    self.browser.find_element_by_xpath(
-                        '//div[@id="cntrl1"]/a[text() = "Encourage"]'
-                    ).click()
-                    print ("Encouraged!")
-                except ElementNotVisibleException:
-                    print ("Encourage Not Visible [Can't Encourage]")
-
-    def __get_health_percent__(self):
+    def __get_hero_health_percent__(self):
         health_text = self.browser.find_element_by_xpath(
             '//div[@id="hk_health"]//div[@class="p_bar"]').get_attribute('title')
+        return int(re.sub("[^0-9]", "", health_text))
+
+    def __get_rival_health_percent__(self):
+        health_text = self.browser.find_element_by_xpath(
+            '//div[@id="o_hl1"]//div[@class="p_bar"]').get_attribute('title')
         return int(re.sub("[^0-9]", "", health_text))
 
     def __get_gp__(self):
