@@ -130,10 +130,8 @@ class GodvilleAuto:
                 print ("Dual End. ")
                 break
 
-            if self.__get_turn_progress__() < 10 and (
-                        self.__is_my_defence_turn__() or
-                        self.__get_hero_health_percent__() < 15):
-                self.__encourage__()
+            if self.__get_turn_progress__() < 10 and self.__is_my_defence_turn__():
+                self.__try_encourage__()
 
             # print ("Turn progress before waiting: " + str(self.__get_turn_progress__()) + "%")
             while self.__get_turn_progress__() <= 98:
@@ -142,7 +140,7 @@ class GodvilleAuto:
 
             time.sleep(1)
 
-    def __encourage__(self):
+    def __try_encourage__(self):
         health_percent = self.__get_hero_health_percent__()
         gp = self.__get_gp__()
         print ("Health: " + str(health_percent) + "% | GP: " + str(gp))
@@ -185,20 +183,17 @@ class GodvilleAuto:
     def __is_my_defence_turn__(self):
         is_my_defence_turn = False
 
-        self.rival_2nd_pre_percent = 100
-        self.rival_1st_pre_percent = 100
-
         rival_health_percent = self.__get_rival_health_percent__()
-        rival_1st_diff = self.rival_1st_pre_percent - rival_health_percent
-        rival_2nd_diff = self.rival_2nd_pre_percent - self.rival_1st_pre_percent
+        rival_1st_pre_diff = self.rival_1st_pre_percent - rival_health_percent
+        rival_2nd_pre_diff = self.rival_2nd_pre_percent - self.rival_1st_pre_percent
 
-        print ("rival_1st_diff: " + str(rival_1st_diff))
-        print ("rival_2nd_diff: " + str(rival_2nd_diff))
+        print ("\nrival_1st_diff: " + str(rival_1st_pre_diff))
+        print ("rival_2nd_diff: " + str(rival_2nd_pre_diff))
 
-        if rival_1st_diff < 0:
+        if rival_1st_pre_diff < 0:
             # last turn was rival's defence turn
             is_my_defence_turn = True
-        elif rival_2nd_diff < rival_1st_diff:
+        elif rival_2nd_pre_diff < rival_1st_pre_diff:
             # last turn was rival's defence turn
             is_my_defence_turn = True
 
