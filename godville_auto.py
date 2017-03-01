@@ -18,6 +18,7 @@ class GodvilleAuto:
     MIN_ARENA_GP = 50
     MIN_ENCOURAGE_GP = 40
     MIN_HEALTH_PERCENT = 40
+    MAX_COINS = 200
 
     def __init__(self):
         self.browser = self.__init_browser__()
@@ -35,10 +36,7 @@ class GodvilleAuto:
         fp.set_preference('permissions.default.image', 2)
         fp.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', False)
         fp.set_preference('webdriver.load.strategy', 'unstable')
-        # fp.set_preference('javascript.enabled', False)
         browser = webdriver.Firefox(firefox_profile=fp)
-        # browser = webdriver.PhantomJS()
-        browser.set_window_size(1120, 550)
         browser.implicitly_wait(10)
         return browser
 
@@ -52,11 +50,17 @@ class GodvilleAuto:
 
             if self.__is_send_visible__():
                 gp = self.__get_gp__()
-                if gp > GodvilleAuto.MIN_ARENA_GP:
-                    print ("God Power " + str(gp))
+                coins = self.__get_coins__()
+                print ("God Power: " + str(gp))
+                print ("Coins: " + str(coins))
+
+                if gp > GodvilleAuto.MIN_ARENA_GP and coins < GodvilleAuto.MAX_COINS:
                     self.__send_to_arena__()
-                else:
+                elif gp <= GodvilleAuto.MIN_ARENA_GP:
                     print ("Insufficient God Power")
+                else:
+                    print ("Too many coins")
+
                 self.recheck_flag = True
             else:
                 self.__set_actual_wait_time__()
@@ -203,6 +207,14 @@ class GodvilleAuto:
         print ("is_my_defence_turn: " + str(is_my_defence_turn))
 
         return is_my_defence_turn
+
+    def __get_coins__(self):
+        try:
+            coin_text = self.browser.find_element_by_xpath(
+                '//div[@id="hk_gold_we"]/div[@class="l_val"]').text
+            return int(re.sub("[^0-9]", "", coin_text))
+        except NoSuchElementException:
+            return -1
 
     def __get_turn_progress__(self):
         try:
