@@ -15,11 +15,11 @@ class GodvilleAuto:
     EXTRA_WAIT_TIME = 60
     DUAL_TIME_PER_TURN = 27
     DEFAULT_WAIT_TIME = 1800  # 30 minutes
-    MIN_ARENA_GP = 50
+    MIN_ARENA_GP = 90
     MIN_ENCOURAGE_GP = 40
     MIN_MSG_GP = 5
     MIN_HEALTH_PERCENT = 50
-    MAX_COINS = 2000
+    MAX_COINS = 1000
 
     def __init__(self):
         self.browser = self.__init_browser__()
@@ -139,7 +139,7 @@ class GodvilleAuto:
                 health = self.__get_hero_health_percent__()
                 print("GP: " + str(gp) + " | health: " + str(health))
 
-                if health < GodvilleAuto.MIN_HEALTH_PERCENT:
+                if health and health < GodvilleAuto.MIN_HEALTH_PERCENT:
                     if gp > GodvilleAuto.MIN_ENCOURAGE_GP:
                         if self.__is_my_defence_turn__():
                             self.__try_encourage__()
@@ -180,7 +180,7 @@ class GodvilleAuto:
 
             self.browser.find_element_by_id("voice_submit").click()
 
-        except ElementNotVisibleException:
+        except ElementNotVisibleException, InvalidElementStateException:
             print ("Can't send message")
 
     def __set_actual_wait_time__(self):
