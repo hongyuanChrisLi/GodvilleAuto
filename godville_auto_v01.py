@@ -7,7 +7,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoAlertPresentException
 from selenium.common.exceptions import ElementNotVisibleException, NoSuchElementException
-from selenium.common.exceptions import InvalidElementStateException
 from selenium.webdriver.common.by import By
 
 
@@ -15,27 +14,22 @@ class GodvilleAuto:
     ACTION_COOL_TIME = 5  # seconds
     EXTRA_WAIT_TIME = 60
     DUAL_TIME_PER_TURN = 27
-    DEFAULT_WAIT_TIME = 900  # 15 minutes
-
+    DEFAULT_WAIT_TIME = 1800  # 30 minutes
     MIN_ARENA_GP = 90
     MIN_ENCOURAGE_GP = 40
     MIN_MSG_GP = 5
-    MAX_GP = 100
-
-    MIN_HEALTH = 50
-    GOOD_HEALTH = 80
+    MIN_HEALTH_PERCENT = 50
     MAX_COINS = 1000
-
-    PROGRESS_FULL = 100
-    PROGRESS_ING = 80
 
     def __init__(self):
         self.browser = self.__init_browser__()
         self.timeout = 300
+        self.wait_time = GodvilleAuto.DEFAULT_WAIT_TIME
         self.recheck_flag = False
 
         self.rival_2nd_pre_percent = 100
         self.rival_1st_pre_percent = 100
+
 
     @staticmethod
     def __init_browser__():
@@ -51,11 +45,27 @@ class GodvilleAuto:
         self.__login__()
 
         while True:
+            self.wait_time = GodvilleAuto.DEFAULT_WAIT_TIME
             self.recheck_flag = False
             print ("Checking Time: " + str(datetime.now()))
-            self.__arena_ops__()
-            self.__monster_fight_ops__()
-            GodvilleAuto.__show_wait_info__()
+
+            if self.__is_send_visible__():
+                gp = self.__get_gp__()
+                coins = self.__get_coins__()
+                print ("God Power: " + str(gp))
+                print ("Coins: " + str(coins))
+
+                if gp > GodvilleAuto.MIN_ARENA_GP and coins < GodvilleAuto.MAX_COINS:
+                    self.__send_to_arena__()
+                elif gp <= GodvilleAuto.MIN_ARENA_GP:
+                    print ("Insufficient God Power")
+                else:
+                    print ("Too many coins")
+                self.__recheck_wait_time__()
+            else:
+                self.__set_actual_wait_time__()
+
+            self.__show_wait_info__()
 
     def __login__(self):
         self.browser.get('https://godvillegame.com/')
@@ -78,21 +88,6 @@ class GodvilleAuto:
             WebDriverWait(self.browser, self.timeout).until(element_present)
         except TimeoutException:
             print "Timed out waiting for page to load"
-
-    def __arena_ops__(self):
-        if self.__is_send_visible__():
-            gp = self.__get_gp__()
-            coins = self.__get_coins__()
-            print ("God Power: " + str(gp))
-            print ("Coins: " + str(coins))
-
-            if gp > GodvilleAuto.MIN_ARENA_GP:
-                if coins < GodvilleAuto.MAX_COINS:
-                    self.__send_to_arena__()
-                else:
-                    print ("Too many coins")
-            else:
-                print ("Insufficient God Power")
 
     def __send_to_arena__(self):
         try:
@@ -144,7 +139,7 @@ class GodvilleAuto:
                 health = self.__get_hero_health_percent__()
                 print("GP: " + str(gp) + " | health: " + str(health))
 
-                if health and health < GodvilleAuto.MIN_HEALTH:
+                if health and health < GodvilleAuto.MIN_HEALTH_PERCENT:
                     if gp > GodvilleAuto.MIN_ENCOURAGE_GP:
                         if self.__is_my_defence_turn__():
                             self.__try_encourage__()
@@ -159,22 +154,6 @@ class GodvilleAuto:
             # print ("Turn progress after waiting: " + str(self.__get_turn_progress__()) + "%")
 
             time.sleep(1)
-
-    def __monster_fight_ops__(self):
-        gp = self.__get_gp__()
-        health = self.__get_hero_health_percent__()
-        progress = self.__get_monster_fight_progress__()
-        is_fight = self.__is_monster_enermy_visible__()
-        print ("Monster Fight?: " + str(is_fight) +
-               " | God Power: " + str(gp) +
-               "% | Health: " + str(health) +
-               "% | Progress: " + str(progress)) + "%"
-        if gp == GodvilleAuto.MAX_GP and \
-                is_fight and \
-                health < GodvilleAuto.GOOD_HEALTH and \
-                progress < GodvilleAuto.PROGRESS_ING:
-            print ("Encouraged!")
-            self.__try_encourage__()
 
     def __try_encourage__(self):
         try:
@@ -201,17 +180,36 @@ class GodvilleAuto:
 
             self.browser.find_element_by_id("voice_submit").click()
 
-        except (ElementNotVisibleException, InvalidElementStateException):
+        except ElementNotVisibleException, InvalidElementStateException:
             print ("Can't send message")
+
+    def __set_actual_wait_time__(self):
+        try:
+            wait_time_text = self.browser.find_element_by_xpath(
+                '//div[@class="arena_msg"][contains(text(), "Arena available in")]/span'
+            ).text
+            wait_time_str = str(wait_time_text)
+            print ("Displayed wait time: " + wait_time_str)
+
+            if "h" in wait_time_str:
+                items = wait_time_str.split("h")
+                hours = int(items[0])
+                mins = int(items[1].rstrip("m"))
+                self.wait_time = hours * 3600 + mins * 60 + GodvilleAuto.EXTRA_WAIT_TIME
+            else:
+                try:
+                    mins = int(wait_time_str.rstrip("m"))
+                    self.wait_time = mins * 60 + 10 + GodvilleAuto.EXTRA_WAIT_TIME
+                except ValueError:
+                    self.__recheck_wait_time__()
+
+        except NoSuchElementException:
+            self.__recheck_wait_time__()
 
     def __is_send_visible__(self):
         return self.browser.find_element_by_xpath(
                 '//div[@class="arena_link_wrap"]/a[text() = "Send to Arena"]'
             ).is_displayed()
-
-    def __is_monster_enermy_visible__(self):
-        return self.browser.find_element_by_xpath(
-            '//div[@id="news"]//div[@class="p_bar monster_pb"]').is_displayed()
 
     def __is_my_defence_turn__(self):
         is_my_defence_turn = False
@@ -267,22 +265,17 @@ class GodvilleAuto:
         gp_text = self.browser.find_element_by_class_name('gp_val').text
         return int(str(gp_text).rstrip('%'))
 
-    def __get_monster_fight_progress__(self):
-        if not self.__is_monster_enermy_visible__():
-            return GodvilleAuto.PROGRESS_FULL
+    def __show_wait_info__(self):
+        avail_time = datetime.now() + timedelta(seconds=self.wait_time)
+        if self.recheck_flag:
+            print ("Will check again at: " + str(avail_time) + "\n")
+        else:
+            print ("Arena will be available at: " + str(avail_time) + "\n")
+        time.sleep(self.wait_time)
 
-        try:
-            progress_text = self.browser.find_element_by_xpath(
-                '//div[@id="news"]//div[@class="p_bar monster_pb"]').get_attribute("title")
-            return int(re.sub("[^0-9]", "", progress_text))
-        except (ElementNotVisibleException, ValueError):
-            return GodvilleAuto.PROGRESS_FULL
-
-    @staticmethod
-    def __show_wait_info__():
-        avail_time = datetime.now() + timedelta(seconds=GodvilleAuto.DEFAULT_WAIT_TIME)
-        print ("Will check again at: " + str(avail_time) + "\n")
-        time.sleep(GodvilleAuto.DEFAULT_WAIT_TIME)
+    def __recheck_wait_time__(self):
+        print ("Check Again for Arena Available Time")
+        self.recheck_flag = True
 
 auto_slmn = GodvilleAuto()
 auto_slmn.startup()
