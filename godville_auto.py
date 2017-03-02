@@ -11,14 +11,15 @@ from selenium.webdriver.common.by import By
 
 
 class GodvilleAuto:
-    ACTION_COOL_TIME = 5 # seconds
+    ACTION_COOL_TIME = 5  # seconds
     EXTRA_WAIT_TIME = 60
     DUAL_TIME_PER_TURN = 27
-    DEFAULT_WAIT_TIME = 900 # 15 minutes
+    DEFAULT_WAIT_TIME = 1800  # 30 minutes
     MIN_ARENA_GP = 50
     MIN_ENCOURAGE_GP = 40
-    MIN_HEALTH_PERCENT = 40
-    MAX_COINS = 200
+    MIN_MSG_GP = 5
+    MIN_HEALTH_PERCENT = 50
+    MAX_COINS = 2000
 
     def __init__(self):
         self.browser = self.__init_browser__()
@@ -60,8 +61,7 @@ class GodvilleAuto:
                     print ("Insufficient God Power")
                 else:
                     print ("Too many coins")
-
-                self.recheck_flag = True
+                self.__recheck_wait_time__()
             else:
                 self.__set_actual_wait_time__()
 
@@ -134,10 +134,21 @@ class GodvilleAuto:
                 print ("Dual End. ")
                 break
 
-            if self.__get_turn_progress__() < 10 and self.__is_my_defence_turn__():
-                self.__try_encourage__()
+            if self.__get_turn_progress__() < 10:
+                gp = self.__get_gp__()
+                health = self.__get_hero_health_percent__()
+                print("GP: " + str(gp) + " | health: " + str(health))
 
-            # print ("Turn progress before waiting: " + str(self.__get_turn_progress__()) + "%")
+                if health < GodvilleAuto.MIN_HEALTH_PERCENT:
+                    if gp > GodvilleAuto.MIN_ENCOURAGE_GP:
+                        if self.__is_my_defence_turn__():
+                            self.__try_encourage__()
+                    elif gp > GodvilleAuto.MIN_MSG_GP:
+                        if self.__is_my_defence_turn__():
+                            self.__try_heal_msg__()
+                        else:
+                            self.__try_attack_msg__()
+
             while self.__get_turn_progress__() <= 98:
                 time.sleep(0.25)
             # print ("Turn progress after waiting: " + str(self.__get_turn_progress__()) + "%")
@@ -145,18 +156,32 @@ class GodvilleAuto:
             time.sleep(1)
 
     def __try_encourage__(self):
-        health_percent = self.__get_hero_health_percent__()
-        gp = self.__get_gp__()
-        print ("Health: " + str(health_percent) + "% | GP: " + str(gp))
+        try:
+            self.browser.find_element_by_xpath(
+                '//div[@id="cntrl1"]/a[text() = "Encourage"]'
+            ).click()
+            print ("Encouraged!")
+        except ElementNotVisibleException:
+            print ("Encourage Not Visible [Can't Encourage]")
 
-        if health_percent < GodvilleAuto.MIN_HEALTH_PERCENT and gp > GodvilleAuto.MIN_ENCOURAGE_GP:
-            try:
-                self.browser.find_element_by_xpath(
-                    '//div[@id="cntrl1"]/a[text() = "Encourage"]'
-                ).click()
-                print ("Encouraged!")
-            except ElementNotVisibleException:
-                print ("Encourage Not Visible [Can't Encourage]")
+    def __try_attack_msg__(self):
+        self.__send_msg__("Strike kick beat crush hit attack smash smite punch tramp")
+        print("Attach Message Sent")
+
+    def __try_heal_msg__(self):
+        self.__send_msg__("Heal health rest drink restore wounds")
+        print("Heal Message Sent")
+
+    def __send_msg__(self, msg):
+        try:
+            god_voice = self.browser.find_element_by_id("godvoice")
+            god_voice.clear()
+            god_voice.send_keys(msg)
+
+            self.browser.find_element_by_id("voice_submit").click()
+
+        except ElementNotVisibleException:
+            print ("Can't send message")
 
     def __set_actual_wait_time__(self):
         try:
@@ -172,12 +197,14 @@ class GodvilleAuto:
                 mins = int(items[1].rstrip("m"))
                 self.wait_time = hours * 3600 + mins * 60 + GodvilleAuto.EXTRA_WAIT_TIME
             else:
-                mins = int(wait_time_str.rstrip("m"))
-                self.wait_time = mins * 60 + 10 + GodvilleAuto.EXTRA_WAIT_TIME
+                try:
+                    mins = int(wait_time_str.rstrip("m"))
+                    self.wait_time = mins * 60 + 10 + GodvilleAuto.EXTRA_WAIT_TIME
+                except ValueError:
+                    self.__recheck_wait_time__()
 
         except NoSuchElementException:
-            print ("Check Again for Arena Available Time")
-            self.recheck_flag = True
+            self.__recheck_wait_time__()
 
     def __is_send_visible__(self):
         return self.browser.find_element_by_xpath(
@@ -245,6 +272,10 @@ class GodvilleAuto:
         else:
             print ("Arena will be available at: " + str(avail_time) + "\n")
         time.sleep(self.wait_time)
+
+    def __recheck_wait_time__(self):
+        print ("Check Again for Arena Available Time")
+        self.recheck_flag = True
 
 auto_slmn = GodvilleAuto()
 auto_slmn.startup()
