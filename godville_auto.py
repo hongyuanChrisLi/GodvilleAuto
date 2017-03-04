@@ -187,7 +187,7 @@ class GodvilleAuto:
 
     def __try_attack_msg__(self):
         self.__send_msg__("Strike kick beat crush hit attack smash smite punch tramp")
-        print("Attach Message Sent")
+        print("Attack Message Sent")
 
     def __try_heal_msg__(self):
         self.__send_msg__("Heal health rest drink restore wounds")
@@ -210,8 +210,12 @@ class GodvilleAuto:
             ).is_displayed()
 
     def __is_monster_enermy_visible__(self):
-        return self.browser.find_element_by_xpath(
-            '//div[@id="news"]//div[@class="p_bar monster_pb"]').is_displayed()
+        try:
+            is_visible = self.browser.find_element_by_xpath(
+                '//div[@id="news"]//div[@class="p_bar monster_pb"]').is_displayed()
+        except NoSuchElementException:
+            is_visible = False
+        return is_visible
 
     def __is_my_defence_turn__(self):
         is_my_defence_turn = False
