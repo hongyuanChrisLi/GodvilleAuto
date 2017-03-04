@@ -279,7 +279,7 @@ class GodvilleAuto:
             progress_text = self.browser.find_element_by_xpath(
                 '//div[@id="news"]//div[@class="p_bar monster_pb"]').get_attribute("title")
             return int(re.sub("[^0-9]", "", progress_text))
-        except (ElementNotVisibleException, ValueError):
+        except (ElementNotVisibleException, ValueError, NoSuchElementException):
             return GodvilleAuto.PROGRESS_FULL
 
     @staticmethod
