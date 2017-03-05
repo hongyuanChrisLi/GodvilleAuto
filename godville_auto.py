@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoAlertPresentException
 from selenium.common.exceptions import ElementNotVisibleException, NoSuchElementException
-from selenium.common.exceptions import InvalidElementStateException
+from selenium.common.exceptions import InvalidElementStateException, WebDriverException
 from selenium.webdriver.common.by import By
 
 
@@ -106,6 +106,15 @@ class GodvilleAuto:
                 alert = self.browser.switch_to.alert
                 alert.accept()
 
+                try:
+                    time.sleep(GodvilleAuto.ACTION_COOL_TIME)
+                    alert = self.browser.switch_to.alert
+                    alert.accept()
+                    print ("Enter No God Power Arena")
+
+                except NoAlertPresentException:
+                    print ("Enter Regular Arena")
+
                 self.__start_dual__()
 
             except NoAlertPresentException:
@@ -125,7 +134,7 @@ class GodvilleAuto:
 
             self.__monitor__()
 
-        except TimeoutException:
+        except (TimeoutException, WebDriverException):
             print "Dual didn't start"
 
     def __monitor__(self):
