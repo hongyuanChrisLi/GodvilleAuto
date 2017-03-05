@@ -33,6 +33,7 @@ class GodvilleAuto:
         self.browser = self.__init_browser__()
         self.timeout = 300
         self.recheck_flag = False
+        self.god_power_mode = True
 
         self.rival_2nd_pre_percent = 100
         self.rival_1st_pre_percent = 100
@@ -111,9 +112,11 @@ class GodvilleAuto:
                     alert = self.browser.switch_to.alert
                     alert.accept()
                     print ("Enter No God Power Arena")
+                    self.god_power_mode = False
 
                 except NoAlertPresentException:
                     print ("Enter Regular Arena")
+                    self.god_power_mode = True
 
                 self.__start_dual__()
 
@@ -148,11 +151,11 @@ class GodvilleAuto:
                 print ("Dual End. ")
                 break
 
-            if self.__get_turn_progress__() < 10:
-                gp = self.__get_gp__()
-                health = self.__get_hero_health_percent__()
-                print("GP: " + str(gp) + " | health: " + str(health))
+            gp = self.__get_gp__()
+            health = self.__get_hero_health_percent__()
+            print("GP: " + str(gp) + " | health: " + str(health))
 
+            if self.god_power_mode and self.__get_turn_progress__() < 10:
                 if health and health < GodvilleAuto.MIN_HEALTH:
                     if gp > GodvilleAuto.MIN_ENCOURAGE_GP:
                         if self.__is_my_defence_turn__():
