@@ -54,6 +54,7 @@ class GodvilleAuto:
         while True:
             self.recheck_flag = False
             print ("Checking Time: " + str(datetime.now()))
+            self.__goto_hero_page__()
             self.__arena_ops__()
             self.__monster_fight_ops__()
             GodvilleAuto.__show_wait_info__()
@@ -79,6 +80,16 @@ class GodvilleAuto:
             WebDriverWait(self.browser, self.timeout).until(element_present)
         except TimeoutException:
             print "Timed out waiting for page to load"
+
+    def __goto_hero_page__(self):
+        try:
+            hero_link = self.browser.find_element_by_xpath('//li[@id="m_hero"]/a')
+            hero_link.click()
+            print "Go to hero page"
+            time.sleep(5)
+
+        except NoSuchElementException:
+            print "On the right page"
 
     def __arena_ops__(self):
         if self.__is_send_visible__():
@@ -185,7 +196,6 @@ class GodvilleAuto:
                 is_fight and \
                 health < GodvilleAuto.GOOD_HEALTH and \
                 progress < GodvilleAuto.PROGRESS_ING:
-            print ("Encouraged!")
             self.__try_encourage__()
 
     def __try_encourage__(self):
