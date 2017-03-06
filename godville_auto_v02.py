@@ -17,14 +17,14 @@ class GodvilleAuto:
     DUAL_TIME_PER_TURN = 27
     DEFAULT_WAIT_TIME = 900  # 15 minutes
 
-    MIN_ARENA_GP = 75
+    MIN_ARENA_GP = 90
     MIN_ENCOURAGE_GP = 40
     MIN_MSG_GP = 5
     MAX_GP = 100
 
-    MIN_HEALTH = 60
+    MIN_HEALTH = 50
     GOOD_HEALTH = 80
-    MAX_COINS = 1500
+    MAX_COINS = 1000
 
     PROGRESS_FULL = 100
     PROGRESS_ING = 80
@@ -172,7 +172,10 @@ class GodvilleAuto:
                         if self.__is_my_defence_turn__():
                             self.__try_encourage__()
                     elif gp > GodvilleAuto.MIN_MSG_GP:
-                        self.__try_attack_msg__()
+                        if self.__is_my_defence_turn__():
+                            self.__try_heal_msg__()
+                        else:
+                            self.__try_attack_msg__()
 
             while self.__get_turn_progress__() <= 98:
                 time.sleep(0.25)
