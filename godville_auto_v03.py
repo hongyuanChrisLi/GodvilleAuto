@@ -24,8 +24,7 @@ class GodvilleAuto:
 
     MIN_HEALTH = 60
     GOOD_HEALTH = 80
-    MAX_ARENA_COINS = 1500
-    MIN_BRICK_COINS = 3000
+    MAX_COINS = 1500
 
     PROGRESS_FULL = 100
     PROGRESS_ING = 80
@@ -57,7 +56,7 @@ class GodvilleAuto:
             print ("Checking Time: " + str(datetime.now()))
             self.__goto_hero_page__()
             self.__arena_ops__()
-            self.__encourage_for_bricks__()
+            self.__monster_fight_ops__()
             GodvilleAuto.__show_wait_info__()
 
     def __login__(self):
@@ -72,7 +71,7 @@ class GodvilleAuto:
         password_input.clear()
         password_input.send_keys(godville_pass)
 
-        time.sleep(GodvilleAuto.ACTION_COOL_TIME)
+        time.sleep(5)
 
         self.browser.find_element_by_xpath('//input[@name="commit"]').click()
 
@@ -87,7 +86,7 @@ class GodvilleAuto:
             hero_link = self.browser.find_element_by_xpath('//li[@id="m_hero"]/a')
             hero_link.click()
             print "Go to hero page"
-            time.sleep(GodvilleAuto.ACTION_COOL_TIME)
+            time.sleep(5)
 
         except NoSuchElementException:
             print "On the right page"
@@ -100,7 +99,7 @@ class GodvilleAuto:
             print ("Coins: " + str(coins))
 
             if gp > GodvilleAuto.MIN_ARENA_GP:
-                if coins < GodvilleAuto.MAX_ARENA_COINS:
+                if coins < GodvilleAuto.MAX_COINS:
                     self.__send_to_arena__()
                 else:
                     print ("Too many coins")
@@ -181,26 +180,20 @@ class GodvilleAuto:
 
             time.sleep(1)
 
-    def __encourage_for_bricks__(self):
+    def __monster_fight_ops__(self):
         gp = self.__get_gp__()
         health = self.__get_hero_health_percent__()
-        coins = self.__get_coins__()
-        # progress = self.__get_monster_fight_progress__()
+        progress = self.__get_monster_fight_progress__()
         is_fight = self.__is_monster_enermy_visible__()
         print ("Monster Fight?: " + str(is_fight) +
                " | God Power: " + str(gp) +
                "% | Health: " + str(health) +
-               "% | Coins: " + str(coins))
-        if gp == GodvilleAuto.MAX_GP and coins > GodvilleAuto.MIN_BRICK_COINS:
+               "% | Progress: " + str(progress)) + "%"
+        if gp == GodvilleAuto.MAX_GP and \
+                is_fight and \
+                health < GodvilleAuto.GOOD_HEALTH and \
+                progress < GodvilleAuto.PROGRESS_ING:
             self.__try_encourage__()
-
-            time.sleep(GodvilleAuto.ACTION_COOL_TIME)
-            gp_after = self.__get_gp__()
-            health_after = self.__get_hero_health_percent__()
-            coins_after = self.__get_coins__()
-            print("Result => God Power: " + str(gp_after) +
-                  "% | Health: " + str(health_after) +
-                  "% | Coins:" + str(coins_after))
 
     def __try_encourage__(self):
         try:
