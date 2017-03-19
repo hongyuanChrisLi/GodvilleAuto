@@ -249,9 +249,13 @@ class GodvilleAuto:
 
     def __is_mile_away__(self):
         try:
-            self.browser.find_element_by_id("hk_distance")
-            return True
+            capt = self.browser.find_element_by_xpath(
+                '//div[@id="hk_distance"]/div[@class="l_capt"]').text
+            if capt == 'Milestones Passed':
+                return True
+            return False
         except NoSuchElementException:
+            print ("element not found at __is_mile_away__")
             return False
 
     def __is_my_defence_turn__(self):
