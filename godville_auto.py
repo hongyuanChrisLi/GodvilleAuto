@@ -186,15 +186,15 @@ class GodvilleAuto:
         coins = self.__get_coins__()
         # progress = self.__get_monster_fight_progress__()
         is_fight = self.__is_monster_enermy_visible__()
-        is_earthly_news = self.__is_earthly_news__()
-        print ("Earthly?: " + str(is_earthly_news) +
+        is_mile_away = self.__is_mile_away__()
+        print ("Mile Away?: " + str(is_mile_away) +
                " | Fight?: " + str(is_fight) +
                " | God Power: " + str(gp) +
                "% | Health: " + str(health) +
                "% | Coins: " + str(coins))
         if gp == GodvilleAuto.MAX_GP \
                 and coins > GodvilleAuto.MIN_BRICK_COINS \
-                and is_earthly_news \
+                and is_mile_away \
                 and not is_fight:
             self.__try_encourage__()
 
@@ -247,13 +247,10 @@ class GodvilleAuto:
             is_visible = False
         return is_visible
 
-    def __is_earthly_news__(self):
+    def __is_mile_away__(self):
         try:
-            title = self.browser.find_element_by_xpath(
-                '//div[@id="news"]//h2[@class="block_title"]').text
-            if title == "Earthly News":
-                return True
-            return False
+            self.browser.find_element_by_id("hk_distance")
+            return True
         except NoSuchElementException:
             return False
 
