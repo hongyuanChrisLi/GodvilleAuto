@@ -15,7 +15,7 @@ class GodvilleAuto:
     ACTION_COOL_TIME = 5  # seconds
     EXTRA_WAIT_TIME = 60
     DUAL_TIME_PER_TURN = 27
-    DEFAULT_WAIT_TIME = 900  # 15 minutes
+    DEFAULT_WAIT_TIME = 300  # 5 minutes
 
     MIN_ARENA_GP = 90
     MIN_ENCOURAGE_GP = 40
@@ -54,7 +54,7 @@ class GodvilleAuto:
 
         while True:
             self.recheck_flag = False
-            print ("Checking Time: " + str(datetime.now()))
+            print ("Checking Time: " + datetime.now().strftime('%m-%d %H:%M'))
             self.__goto_hero_page__()
             self.__arena_ops__()
             self.__encourage_for_bricks__()
@@ -90,22 +90,21 @@ class GodvilleAuto:
             time.sleep(GodvilleAuto.ACTION_COOL_TIME)
 
         except NoSuchElementException:
-            print "On the right page"
+            return
 
     def __arena_ops__(self):
         if self.__is_send_visible__():
             gp = self.__get_gp__()
             coins = self.__get_coins__()
-            print ("God Power: " + str(gp))
-            print ("Coins: " + str(coins))
+            print ("Arena Available | God Power: " + str(gp) + " | Coins: " + str(coins))
 
             if gp > GodvilleAuto.MIN_ARENA_GP:
                 if coins < GodvilleAuto.MAX_ARENA_COINS:
                     self.__send_to_arena__()
                 else:
-                    print ("Too many coins")
+                    print ("Too many coins for Arena")
             else:
-                print ("Insufficient God Power")
+                print ("Insufficient God Power for Arena")
 
     def __send_to_arena__(self):
         try:
@@ -187,11 +186,16 @@ class GodvilleAuto:
         coins = self.__get_coins__()
         # progress = self.__get_monster_fight_progress__()
         is_fight = self.__is_monster_enermy_visible__()
-        print ("Monster Fight?: " + str(is_fight) +
+        is_earthly_news = self.__is_earthly_news__()
+        print ("Earthly?: " + str(is_earthly_news) +
+               " | Fight?: " + str(is_fight) +
                " | God Power: " + str(gp) +
                "% | Health: " + str(health) +
                "% | Coins: " + str(coins))
-        if gp == GodvilleAuto.MAX_GP and coins > GodvilleAuto.MIN_BRICK_COINS:
+        if gp == GodvilleAuto.MAX_GP \
+                and coins > GodvilleAuto.MIN_BRICK_COINS \
+                and is_earthly_news \
+                and not is_fight:
             self.__try_encourage__()
 
             time.sleep(GodvilleAuto.ACTION_COOL_TIME)
@@ -242,6 +246,16 @@ class GodvilleAuto:
         except NoSuchElementException:
             is_visible = False
         return is_visible
+
+    def __is_earthly_news__(self):
+        try:
+            title = self.browser.find_element_by_xpath(
+                '//div[@id="news"]//h2[@class="block_title"]').text
+            if title == "Earthly News":
+                return True
+            return False
+        except NoSuchElementException:
+            return False
 
     def __is_my_defence_turn__(self):
         is_my_defence_turn = False
@@ -311,7 +325,7 @@ class GodvilleAuto:
     @staticmethod
     def __show_wait_info__():
         avail_time = datetime.now() + timedelta(seconds=GodvilleAuto.DEFAULT_WAIT_TIME)
-        print ("Will check again at: " + str(avail_time) + "\n")
+        print ("Will check again at: " + avail_time.strftime('%m-%d %H:%M') + "\n")
         time.sleep(GodvilleAuto.DEFAULT_WAIT_TIME)
 
 auto_slmn = GodvilleAuto()
