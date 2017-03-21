@@ -16,6 +16,8 @@ class GodvilleAuto:
     EXTRA_WAIT_TIME = 60
     DUAL_TIME_PER_TURN = 27
     DEFAULT_WAIT_TIME = 300  # 5 minutes
+    ARENA_WAIT_CHECK_TIME = 60  # 1 minute
+    MAX_WAIT_ARENA_TIME = 600  # 10 minutes
 
     MIN_ARENA_GP = 90
     MIN_ENCOURAGE_GP = 40
@@ -138,18 +140,23 @@ class GodvilleAuto:
             print ("Send to Arena Element Not Visible")
 
     def __start_dual__(self):
-        print ("Sent to Arena")
+        print ("Sent to Arena | Waiting for Dual ... ")
+        waited_time = 0
+        while True:
+            try:
+                element_present = EC.presence_of_element_located((By.ID, "m_fight_log"))
+                WebDriverWait(self.browser, GodvilleAuto.ARENA_WAIT_CHECK_TIME).until(element_present)
+                self.__monitor__()
+                break
 
-        wait_arena_time = 900
-        try:
-            print ("Waiting for Dual ... ")
-            element_present = EC.presence_of_element_located((By.ID, "m_fight_log"))
-            WebDriverWait(self.browser, wait_arena_time).until(element_present)
+            except (TimeoutException, WebDriverException):
+                waited_time += GodvilleAuto.ARENA_WAIT_CHECK_TIME
 
-            self.__monitor__()
-
-        except (TimeoutException, WebDriverException):
-            print "Dual didn't start"
+                if waited_time < GodvilleAuto.MAX_WAIT_ARENA_TIME:
+                    print ("Waited " + str(waited_time) + "s | Still waiting ...")
+                else:
+                    print "Dual didn't start"
+                    break
 
     def __monitor__(self):
         print ("Dual Start!")
