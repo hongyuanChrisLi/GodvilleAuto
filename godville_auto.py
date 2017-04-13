@@ -22,11 +22,12 @@ class GodvilleAuto:
     MIN_ARENA_GP = 90
     MIN_ENCOURAGE_GP = 40
     MIN_MSG_GP = 5
+    MIN_ENCOURAGE_BRICK_GP = 75
     MAX_GP = 100
 
     MIN_HEALTH = 60
     GOOD_HEALTH = 80
-    MAX_ARENA_COINS = 1500
+    MAX_ARENA_COINS = 1000
     MIN_BRICK_COINS = 3000
 
     PROGRESS_FULL = 100
@@ -199,7 +200,7 @@ class GodvilleAuto:
                " | God Power: " + str(gp) +
                "% | Health: " + str(health) +
                "% | Coins: " + str(coins))
-        if gp == GodvilleAuto.MAX_GP \
+        if gp > GodvilleAuto.MIN_ENCOURAGE_BRICK_GP \
                 and coins > GodvilleAuto.MIN_BRICK_COINS \
                 and is_mile_away \
                 and not is_fight:
