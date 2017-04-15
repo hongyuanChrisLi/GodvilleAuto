@@ -150,7 +150,7 @@ class GodvilleAuto:
                 self.__monitor__()
                 break
 
-            except (TimeoutException, WebDriverException) as e:
+            except (TimeoutException, WebDriverException):
                 self.browser.refresh()
                 waited_time += GodvilleAuto.ARENA_WAIT_CHECK_TIME
 
