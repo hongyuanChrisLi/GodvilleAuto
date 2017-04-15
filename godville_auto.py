@@ -150,7 +150,8 @@ class GodvilleAuto:
                 self.__monitor__()
                 break
 
-            except (TimeoutException, WebDriverException):
+            except (TimeoutException, WebDriverException) as e:
+                self.browser.refresh()
                 waited_time += GodvilleAuto.ARENA_WAIT_CHECK_TIME
 
                 if waited_time < GodvilleAuto.MAX_WAIT_ARENA_TIME:
@@ -166,6 +167,7 @@ class GodvilleAuto:
         while True:
             try:
                 self.browser.find_element_by_id("m_fight_log")
+                print ("Find element m_fight_log in __monitor__")
             except NoSuchElementException:
                 print ("Dual End. ")
                 break
