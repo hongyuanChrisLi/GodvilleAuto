@@ -319,8 +319,11 @@ class GodvilleAuto:
         return int(re.sub("[^0-9]", "", health_text))
 
     def __get_gp__(self):
-        gp_text = self.browser.find_element_by_class_name('gp_val').text
-        return int(str(gp_text).rstrip('%'))
+        try:
+            gp_text = self.browser.find_element_by_class_name('gp_val').text
+            return int(str(gp_text).rstrip('%'))
+        except ValueError:
+            return 0
 
     def __get_monster_fight_progress__(self):
         if not self.__is_monster_enermy_visible__():
