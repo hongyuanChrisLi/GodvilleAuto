@@ -297,7 +297,7 @@ class GodvilleAuto:
             coin_text = self.browser.find_element_by_xpath(
                 '//div[@id="hk_gold_we"]/div[@class="l_val"]').text
             return int(re.sub("[^0-9]", "", coin_text))
-        except NoSuchElementException:
+        except (NoSuchElementException, ValueError):
             return -1
 
     def __get_turn_progress__(self):
@@ -305,7 +305,7 @@ class GodvilleAuto:
             turn_progress_text = self.browser.find_element_by_xpath(
                 '//div[@id="turn_pbar"]/div').get_attribute('title')
             return int(re.sub("[^0-9]", "", turn_progress_text))
-        except NoSuchElementException:
+        except (NoSuchElementException, ValueError):
             return 100
 
     def __get_hero_health_percent__(self):
