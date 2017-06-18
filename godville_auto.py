@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoAlertPresentException
 from selenium.common.exceptions import ElementNotVisibleException, NoSuchElementException
 from selenium.webdriver.common.by import By
 
@@ -16,7 +16,7 @@ class GodvilleAuto:
     DEFAULT_WAIT_TIME = 600  # 10 minutes
 
     MIN_DUNGEON_GP = 50
-    MAX_DUNGEON_COINS = 1500
+    MAX_DUNGEON_COINS = 2500
     MIN_DUNGEON_HEALTH = 90
 
     def __init__(self):
@@ -85,7 +85,7 @@ class GodvilleAuto:
             gp = self.__get_gp__()
             coins = self.__get_coins__()
             health = self.__get_hero_health_percent__()
-            print ("Arena Available!"
+            print ("Dungeon Available!"
                    " | God Power: " + str(gp) +
                    " | Coins: " + str(coins) +
                    " | Health: " + str(health))
@@ -107,6 +107,14 @@ class GodvilleAuto:
             self.browser.find_element_by_xpath(
                 '//div[@class="chf_link_wrap"]/a[text() = "Drop to Dungeon"]'
             ).click()
+
+            try:
+                time.sleep(GodvilleAuto.ACTION_COOL_TIME)
+                alert = self.browser.switch_to.alert
+                alert.accept()
+
+            except NoAlertPresentException:
+                print ("Still waiting, check again")
 
         except ElementNotVisibleException:
             print ("Drop to Dungeon Element Not Visible")
